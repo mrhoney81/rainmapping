@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UK Climate Interactive Viewer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>UK Climate Interactive Viewer</h1>
+            <p class="subtitle">Exploring rainfall and sunshine patterns across the United Kingdom (2010-2022)</p>
+        </header>
+
+        <!-- Main Controls -->
+        <div class="controls-panel">
+            <!-- View Mode Toggle -->
+            <div class="control-group">
+                <label class="control-label">View Mode</label>
+                <div class="view-toggle">
+                    <button id="monthlyBtn" class="toggle-btn active">Monthly Data</button>
+                    <button id="averagesBtn" class="toggle-btn">Monthly Averages</button>
+                </div>
+            </div>
+
+            <!-- Time Controls -->
+            <div class="time-controls">
+                <div class="control-group year-control">
+                    <label for="yearSlider" class="control-label">
+                        Year: <span id="yearValue" class="value-display">2022</span>
+                    </label>
+                    <input type="range" id="yearSlider" class="slider" min="2010" max="2022" value="2022">
+                </div>
+
+                <div class="control-group month-control">
+                    <label for="monthSlider" class="control-label">
+                        Month: <span id="monthValue" class="value-display">January</span>
+                    </label>
+                    <input type="range" id="monthSlider" class="slider" min="1" max="12" value="1">
+                </div>
+
+                <div class="control-group playback-control">
+                    <button id="playBtn" class="btn-primary">
+                        <span id="playIcon">▶</span> <span id="playText">Play</span>
+                    </button>
+                    <label class="speed-label">
+                        Speed:
+                        <select id="speedSelect">
+                            <option value="1000">Slow</option>
+                            <option value="500" selected>Normal</option>
+                            <option value="250">Fast</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="content-wrapper">
+            <!-- Map Display -->
+            <div class="map-section">
+                <div class="map-container">
+                    <canvas id="mapCanvas"></canvas>
+                    <div class="legend-container">
+                        <img src="data/key_transparent.png" class="legend" alt="Bivariate Color Key">
+                    </div>
+                    <div id="coordsDisplay" class="coords-display"></div>
+                </div>
+                <div class="map-info">
+                    <p class="data-source">Data source: CEDA HADUKGrid 1km dataset (British National Grid EPSG:27700)</p>
+                </div>
+            </div>
+
+            <!-- Location Panel -->
+            <div class="locations-panel">
+                <div class="panel-header">
+                    <h3>Locations</h3>
+                    <button id="toggleAllLocations" class="btn-small">Show All</button>
+                </div>
+
+                <div class="location-controls">
+                    <input
+                        type="text"
+                        id="locationSearch"
+                        class="search-input"
+                        placeholder="Search locations...">
+                    <button id="addCustomBtn" class="btn-secondary">Add Custom Location</button>
+                </div>
+
+                <div id="locationList" class="location-list"></div>
+
+                <div class="panel-footer">
+                    <p class="help-text">Click on the map to add custom locations</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions Modal (Hidden by default) -->
+        <div id="customLocationModal" class="modal">
+            <div class="modal-content">
+                <h3>Add Custom Location</h3>
+                <p>Enter the location details:</p>
+                <div class="form-group">
+                    <label for="customLocationName">Name:</label>
+                    <input type="text" id="customLocationName" placeholder="e.g., My Village">
+                </div>
+                <div class="form-group">
+                    <label for="customLocationX">British National Grid X:</label>
+                    <input type="number" id="customLocationX" placeholder="e.g., 530000">
+                </div>
+                <div class="form-group">
+                    <label for="customLocationY">British National Grid Y:</label>
+                    <input type="number" id="customLocationY" placeholder="e.g., 180000">
+                </div>
+                <div class="modal-actions">
+                    <button id="saveCustomLocation" class="btn-primary">Save</button>
+                    <button id="cancelCustomLocation" class="btn-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2025 UK Climate Viewer | Data: CEDA HADUKGrid | Built with bivariate mapping</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
