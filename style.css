@@ -250,6 +250,38 @@ header .subtitle {
     box-shadow: var(--shadow-md);
 }
 
+.map-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.btn-zoom {
+    padding: 8px 16px;
+    border: 2px solid var(--primary-color);
+    background: var(--surface);
+    color: var(--primary-color);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-zoom:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.help-hint {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
 .map-container {
     position: relative;
     background: #f1f5f9;
