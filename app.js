@@ -5,7 +5,7 @@
 // --- GLOBAL STATE ---
 let metadata = null;
 let locations = [];
-let currentYear = 2023;
+let currentYear = 2022;
 let currentMonth = 1;
 let viewMode = 'monthly'; // 'monthly' or 'averages'
 let isPlaying = false;
