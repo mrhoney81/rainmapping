@@ -14,6 +14,14 @@ let canvas, ctx;
 let imageCache = new Map();
 let currentImage = null;
 
+// Zoom and Pan state
+let zoomLevel = 1;
+let panX = 0;
+let panY = 0;
+let isDragging = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
+
 // Month names for display
 const MONTH_NAMES = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -149,10 +157,14 @@ function pixelToBritishGrid(pixel_x, pixel_y, canvasWidth, canvasHeight) {
         return [0, 0];
     }
 
+    // Adjust for zoom and pan
+    const adjusted_x = (pixel_x - panX) / zoomLevel;
+    const adjusted_y = (pixel_y - panY) / zoomLevel;
+
     const {x_min, x_max, y_min, y_max} = metadata.extent;
 
-    const bng_x = x_min + (pixel_x / canvasWidth) * (x_max - x_min);
-    const bng_y = y_min + ((canvasHeight - pixel_y) / canvasHeight) * (y_max - y_min);
+    const bng_x = x_min + (adjusted_x / canvasWidth) * (x_max - x_min);
+    const bng_y = y_min + ((canvasHeight - adjusted_y) / canvasHeight) * (y_max - y_min);
 
     return [Math.round(bng_x), Math.round(bng_y)];
 }
@@ -199,12 +211,24 @@ async function updateDisplay() {
         const img = await loadImage(imagePath);
         currentImage = img;
 
-        // Clear canvas and draw image
+        // Clear canvas and draw image with zoom/pan transformation
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Save the current context state
+        ctx.save();
+
+        // Apply zoom and pan transformations
+        ctx.translate(panX, panY);
+        ctx.scale(zoomLevel, zoomLevel);
+
+        // Draw the image
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         // Draw locations on top
         drawLocations();
+
+        // Restore the context state
+        ctx.restore();
 
         // Preload adjacent images for smooth navigation
         preloadAdjacentImages();
@@ -272,23 +296,18 @@ function drawLocations() {
         ctx.stroke();
 
         // Draw label with background
-        ctx.font = 'bold 12px Arial';
+        ctx.font = 'bold 13px Arial';
         const textWidth = ctx.measureText(loc.name).width;
         const textHeight = 14;
-        const padding = 4;
+        const padding = 6;
 
-        // Draw white background for text
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.fillRect(px + 8, py - textHeight/2 - padding/2, textWidth + padding, textHeight + padding);
+        // Draw dark semi-transparent background for better readability
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        ctx.fillRect(px + 8, py - textHeight/2 - padding/2, textWidth + padding * 2, textHeight + padding);
 
-        // Draw text outline
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 3;
-        ctx.strokeText(loc.name, px + 10, py + 4);
-
-        // Draw text
-        ctx.fillStyle = '#1e293b';
-        ctx.fillText(loc.name, px + 10, py + 4);
+        // Draw text with white color for better contrast
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(loc.name, px + 10 + padding/2, py + 4);
     });
 }
 
@@ -463,6 +482,14 @@ function setupEventListeners() {
         showCustomLocationModal();
     });
 
+    // Reset zoom button
+    document.getElementById('resetZoomBtn').addEventListener('click', () => {
+        zoomLevel = 1;
+        panX = 0;
+        panY = 0;
+        updateDisplay();
+    });
+
     // Custom location modal
     document.getElementById('saveCustomLocation').addEventListener('click', () => {
         saveCustomLocationFromModal();
@@ -484,21 +511,73 @@ function setupEventListeners() {
         }
     });
 
-    // Canvas mouse move to show coordinates
+    canvas.addEventListener('mouseleave', () => {
+        document.getElementById('coordsDisplay').classList.remove('active');
+        isDragging = false;
+    });
+
+    // Zoom with mouse wheel
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+        // Zoom in or out
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.max(1, Math.min(10, zoomLevel * zoomFactor));
+
+        // Adjust pan to zoom toward mouse position
+        if (newZoom !== zoomLevel) {
+            const scale = newZoom / zoomLevel;
+            panX = mouseX - (mouseX - panX) * scale;
+            panY = mouseY - (mouseY - panY) * scale;
+            zoomLevel = newZoom;
+
+            updateDisplay();
+        }
+    }, { passive: false });
+
+    // Pan with mouse drag
+    canvas.addEventListener('mousedown', (e) => {
+        if (!e.shiftKey) { // Only drag when not adding a location
+            isDragging = true;
+            const rect = canvas.getBoundingClientRect();
+            lastMouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            lastMouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+            canvas.style.cursor = 'grabbing';
+        }
+    });
+
     canvas.addEventListener('mousemove', (e) => {
         const rect = canvas.getBoundingClientRect();
-        const px = (e.clientX - rect.left) * (canvas.width / rect.width);
-        const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+        const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-        const [bng_x, bng_y] = pixelToBritishGrid(px, py, canvas.width, canvas.height);
+        if (isDragging) {
+            const dx = mouseX - lastMouseX;
+            const dy = mouseY - lastMouseY;
 
+            panX += dx;
+            panY += dy;
+
+            lastMouseX = mouseX;
+            lastMouseY = mouseY;
+
+            updateDisplay();
+        }
+
+        // Update coordinates display
+        const [bng_x, bng_y] = pixelToBritishGrid(mouseX, mouseY, canvas.width, canvas.height);
         const coordsDisplay = document.getElementById('coordsDisplay');
-        coordsDisplay.textContent = `BNG: ${bng_x}, ${bng_y}`;
+        coordsDisplay.textContent = `BNG: ${bng_x}, ${bng_y} | Zoom: ${zoomLevel.toFixed(1)}x`;
         coordsDisplay.classList.add('active');
     });
 
-    canvas.addEventListener('mouseleave', () => {
-        document.getElementById('coordsDisplay').classList.remove('active');
+    canvas.addEventListener('mouseup', () => {
+        isDragging = false;
+        canvas.style.cursor = 'crosshair';
     });
 
     // Keyboard shortcuts
@@ -545,6 +624,29 @@ function setupEventListeners() {
                 isPlaying = !isPlaying;
                 updateUI();
                 if (isPlaying) playAnimation();
+                break;
+            case '+':
+            case '=':
+                e.preventDefault();
+                zoomLevel = Math.min(10, zoomLevel * 1.2);
+                updateDisplay();
+                break;
+            case '-':
+            case '_':
+                e.preventDefault();
+                zoomLevel = Math.max(1, zoomLevel / 1.2);
+                if (zoomLevel === 1) {
+                    panX = 0;
+                    panY = 0;
+                }
+                updateDisplay();
+                break;
+            case '0':
+                e.preventDefault();
+                zoomLevel = 1;
+                panX = 0;
+                panY = 0;
+                updateDisplay();
                 break;
         }
     });
