@@ -1,0 +1,394 @@
+[
+  {
+    "name": "London",
+    "x": 530000,
+    "y": 180000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Bristol",
+    "x": 359000,
+    "y": 173000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Birmingham",
+    "x": 406000,
+    "y": 286000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Manchester",
+    "x": 384000,
+    "y": 398000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Liverpool",
+    "x": 335000,
+    "y": 390000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Leeds",
+    "x": 430000,
+    "y": 433000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Sheffield",
+    "x": 435000,
+    "y": 387000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Newcastle",
+    "x": 425000,
+    "y": 564000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Edinburgh",
+    "x": 326000,
+    "y": 673000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Glasgow",
+    "x": 259000,
+    "y": 665000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Cardiff",
+    "x": 318000,
+    "y": 176000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Belfast",
+    "x": 333000,
+    "y": 374000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Nottingham",
+    "x": 457000,
+    "y": 339000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Southampton",
+    "x": 442000,
+    "y": 111000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Plymouth",
+    "x": 248000,
+    "y": 55000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Aberdeen",
+    "x": 393000,
+    "y": 806000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Inverness",
+    "x": 266000,
+    "y": 845000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Cambridge",
+    "x": 546000,
+    "y": 258000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Oxford",
+    "x": 451000,
+    "y": 206000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Brighton",
+    "x": 531000,
+    "y": 105000,
+    "type": "city",
+    "visible": true
+  },
+  {
+    "name": "Exeter",
+    "x": 292000,
+    "y": 92000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "York",
+    "x": 460000,
+    "y": 451000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Norwich",
+    "x": 623000,
+    "y": 308000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Coventry",
+    "x": 433000,
+    "y": 279000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Leicester",
+    "x": 458000,
+    "y": 304000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Swansea",
+    "x": 265000,
+    "y": 193000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Derby",
+    "x": 435000,
+    "y": 336000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Stoke-on-Trent",
+    "x": 387000,
+    "y": 345000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Wolverhampton",
+    "x": 391000,
+    "y": 298000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Reading",
+    "x": 472000,
+    "y": 173000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Bournemouth",
+    "x": 409000,
+    "y": 92000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Swindon",
+    "x": 414000,
+    "y": 184000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Milton Keynes",
+    "x": 487000,
+    "y": 238000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Bath",
+    "x": 375000,
+    "y": 165000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Preston",
+    "x": 354000,
+    "y": 429000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Dundee",
+    "x": 340000,
+    "y": 730000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Stirling",
+    "x": 279000,
+    "y": 693000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Canterbury",
+    "x": 615000,
+    "y": 158000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Ipswich",
+    "x": 616000,
+    "y": 244000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Blackpool",
+    "x": 330000,
+    "y": 436000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Carlisle",
+    "x": 340000,
+    "y": 556000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Durham",
+    "x": 427000,
+    "y": 542000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Gloucester",
+    "x": 383000,
+    "y": 218000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Worcester",
+    "x": 385000,
+    "y": 255000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Peterborough",
+    "x": 520000,
+    "y": 298000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Lincoln",
+    "x": 497000,
+    "y": 371000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Chester",
+    "x": 341000,
+    "y": 366000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Salisbury",
+    "x": 414000,
+    "y": 130000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Winchester",
+    "x": 448000,
+    "y": 129000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Truro",
+    "x": 182000,
+    "y": 44000,
+    "type": "city",
+    "visible": false
+  },
+  {
+    "name": "Fort William",
+    "x": 211000,
+    "y": 774000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Oban",
+    "x": 185000,
+    "y": 730000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Wick",
+    "x": 336000,
+    "y": 950000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Lerwick",
+    "x": 447000,
+    "y": 1141000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Kirkwall",
+    "x": 344000,
+    "y": 1010000,
+    "type": "town",
+    "visible": false
+  },
+  {
+    "name": "Stornoway",
+    "x": 142000,
+    "y": 933000,
+    "type": "town",
+    "visible": false
+  }
+]
