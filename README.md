@@ -7,11 +7,14 @@ An interactive web-based visualization tool for exploring UK climate data (rainf
 
 ## Features
 
+- **Dual Data Views**: Toggle between rainfall/sunshine bivariate visualization and temperature visualization
 - **Interactive Time Navigation**: Slider controls to explore monthly climate patterns across years
 - **Monthly Averages**: View pre-computed averages for each calendar month across all years
 - **Location Markers**: Display major UK cities and towns with the ability to add custom locations
 - **Play/Pause Animation**: Automatically cycle through time periods
-- **Bivariate Color Mapping**: Visualize both rainfall and sunshine simultaneously
+- **Bivariate Color Mapping**: Visualize both rainfall and sunshine simultaneously with a 3x3 color grid
+- **Temperature Visualization**: View peak temperature (tasmax) across the UK with a blue-to-red gradient
+- **Zoom and Pan**: Interactive map exploration with mouse wheel zoom and drag-to-pan
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
 - **Static Hosting**: No server required - runs entirely as static files on GitHub Pages
 - **URL Sharing**: Share specific views via URL parameters

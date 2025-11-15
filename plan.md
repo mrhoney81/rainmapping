@@ -14,23 +14,27 @@
 ## Project Overview
 
 ### Goal
-Create an interactive web-based viewer for UK climate data (rainfall and sunshine) that allows users to:
-- Explore monthly climate patterns from 2014-2023
+Create an interactive web-based viewer for UK climate data (rainfall, sunshine, and temperature) that allows users to:
+- Explore monthly climate patterns from 2010-2023
+- Toggle between rainfall/sunshine bivariate view and temperature view
 - View month-by-month changes with a slider
 - Compare individual months or view multi-year averages
 - See specific locations on the map (with ability to add custom locations)
 - Host everything as a static site on GitHub Pages (no server needed!)
 
 ### Key Features
+- **Dual Data Views**: Toggle between rainfall/sunshine bivariate visualization and temperature visualization
 - **Time Series Navigation**: Slider to move through years and months
 - **Monthly Averages**: Pre-computed averages for each calendar month across all years
 - **Location Markers**: Display UK towns/villages with option to add custom coordinates
 - **Play/Pause Animation**: Automatically cycle through time periods
 - **Static Hosting**: All data pre-rendered as images for fast, free hosting
+- **Zoom and Pan**: Interactive map exploration
 
 ### Data Source
 - **CEDA HADUKGrid 1km dataset**
-- Monthly rainfall and sunshine data
+- Monthly rainfall and sunshine data (bivariate visualization)
+- Monthly maximum temperature data (tasmax - univariate visualization)
 - 1km resolution across the UK
 - British National Grid (EPSG:27700) coordinate system
 
@@ -73,20 +77,34 @@ uk-climate-viewer/
 ├── style.css               # Styling
 ├── app.js                  # JavaScript logic
 ├── data/
-│   ├── images/
+│   ├── images/             # Rainfall/Sunshine bivariate maps
 │   │   ├── 2014/
 │   │   │   ├── 01.png, 02.png, ..., 12.png
 │   │   ├── 2015/
 │   │   │   ├── 01.png, 02.png, ..., 12.png
 │   │   └── ... (through 2023)
-│   ├── averages/
+│   ├── averages/           # Rainfall/Sunshine monthly averages
 │   │   ├── 01.png (Jan average across all years)
 │   │   ├── 02.png (Feb average)
 │   │   └── ... (12 total)
-│   ├── key.png             # Bivariate legend
-│   ├── key_transparent.png # Transparent legend
-│   ├── metadata.json       # Geographic extent & dimensions
+│   ├── temp_images/        # Temperature maps
+│   │   ├── 2010/
+│   │   │   ├── 01.png, 02.png, ..., 12.png
+│   │   ├── 2011/
+│   │   └── ... (through 2023)
+│   ├── temp_averages/      # Temperature monthly averages
+│   │   ├── 01.png (Jan average)
+│   │   └── ... (12 total)
+│   ├── key.png             # Bivariate legend (rainfall/sunshine)
+│   ├── key_transparent.png # Transparent bivariate legend
+│   ├── temp_key.png        # Temperature legend
+│   ├── temp_key_transparent.png # Transparent temperature legend
+│   ├── metadata.json       # Geographic extent & dimensions (rainfall/sunshine)
+│   ├── temp_metadata.json  # Geographic extent & dimensions (temperature)
 │   └── locations.json      # UK settlements database
+├── temp_data/              # Raw temperature NetCDF files
+│   └── tasmax_hadukgrid_uk_1km_mon_YYYYMM-YYYYMM.nc
+├── process_temperature.py  # Temperature preprocessing script
 └── README.md
 ```
 
@@ -124,6 +142,31 @@ COLORS = [
     "#000000"   # High rain, High sun (black)
 ]
 ```
+
+### Temperature Color Scheme: Univariate Mapping
+
+The temperature visualization uses a **univariate color scheme** with a blue-to-red gradient:
+
+```python
+TEMP_COLORS = [
+    "#053061",  # Very cold - dark blue
+    "#2166ac",  # Cold - blue
+    "#4393c3",  # Cool - light blue
+    "#92c5de",  # Mild cool - pale blue
+    "#d1e5f0",  # Neutral cool - very pale blue
+    "#fddbc7",  # Neutral warm - very pale orange
+    "#f4a582",  # Mild warm - pale orange
+    "#d6604d",  # Warm - orange-red
+    "#b2182b",  # Hot - red
+    "#67001f"   # Very hot - dark red
+]
+```
+
+**Decile-based Binning:**
+- Temperature data is divided into 10 bins (deciles) for each month
+- Calculated **per-month** to highlight spatial variation within each time period
+- Uses `np.percentile` at 10%, 20%, ..., 90% boundaries
+- Each decile is assigned one of the 10 colors from the gradient
 
 ### Processing Pipeline
 
