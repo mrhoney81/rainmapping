@@ -390,5 +390,19 @@
     "y": 933000,
     "type": "town",
     "visible": false
+  },
+  {
+    "name": "Woolhampton",
+    "x": 457000,
+    "y": 166000,
+    "type": "village",
+    "visible": true
+  },
+  {
+    "name": "St Davids",
+    "x": 175000,
+    "y": 225000,
+    "type": "city",
+    "visible": true
   }
 ]

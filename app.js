@@ -580,6 +580,103 @@ function setupEventListeners() {
         canvas.style.cursor = 'crosshair';
     });
 
+    // Touch support for mobile devices
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartDistance = 0;
+    let initialPanX = 0;
+    let initialPanY = 0;
+    let initialZoom = 1;
+    let isTwoFingerTouch = false;
+
+    canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            // Two finger pinch zoom
+            e.preventDefault();
+            isTwoFingerTouch = true;
+
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+
+            touchStartDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+
+            initialZoom = zoomLevel;
+            initialPanX = panX;
+            initialPanY = panY;
+        } else if (e.touches.length === 1) {
+            // Single finger pan (but only if already zoomed in)
+            if (zoomLevel > 1) {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                touchStartX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+                touchStartY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+                initialPanX = panX;
+                initialPanY = panY;
+                isDragging = true;
+            }
+            // Otherwise allow normal page scrolling
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && isTwoFingerTouch) {
+            e.preventDefault();
+
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+
+            const currentDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+
+            const scale = currentDistance / touchStartDistance;
+            const newZoom = Math.max(1, Math.min(10, initialZoom * scale));
+
+            if (newZoom !== zoomLevel) {
+                zoomLevel = newZoom;
+                updateDisplay();
+            }
+        } else if (e.touches.length === 1 && isDragging && zoomLevel > 1) {
+            e.preventDefault();
+
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const currentX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+            const currentY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+
+            const dx = currentX - touchStartX;
+            const dy = currentY - touchStartY;
+
+            panX = initialPanX + dx;
+            panY = initialPanY + dy;
+
+            updateDisplay();
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+        if (e.touches.length === 0) {
+            isDragging = false;
+            isTwoFingerTouch = false;
+        } else if (e.touches.length === 1) {
+            isTwoFingerTouch = false;
+
+            if (zoomLevel > 1) {
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                touchStartX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+                touchStartY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+                initialPanX = panX;
+                initialPanY = panY;
+            }
+        }
+    });
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
         switch(e.key) {
