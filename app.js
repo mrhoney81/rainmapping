@@ -4,10 +4,12 @@
 
 // --- GLOBAL STATE ---
 let metadata = null;
+let tempMetadata = null;
 let locations = [];
 let currentYear = 2022;
 let currentMonth = 1;
 let viewMode = 'monthly'; // 'monthly' or 'averages'
+let dataType = 'rainsun'; // 'rainsun' or 'temperature'
 let isPlaying = false;
 let animationSpeed = 500;
 let canvas, ctx;
@@ -48,6 +50,16 @@ async function init() {
         }
         metadata = await metadataResponse.json();
         console.log('Metadata loaded:', metadata);
+
+        // Load temperature metadata
+        console.log('Loading temperature metadata...');
+        const tempMetadataResponse = await fetch('data/temp_metadata.json');
+        if (!tempMetadataResponse.ok) {
+            console.warn('Failed to load temp_metadata.json - temperature view will be unavailable');
+        } else {
+            tempMetadata = await tempMetadataResponse.json();
+            console.log('Temperature metadata loaded:', tempMetadata);
+        }
 
         // Load locations
         console.log('Loading locations...');
@@ -202,10 +214,17 @@ async function loadImage(path) {
  */
 async function updateDisplay() {
     try {
-        // Construct image path
-        const imagePath = viewMode === 'monthly'
-            ? `data/images/${currentYear}/${String(currentMonth).padStart(2, '0')}.png`
-            : `data/averages/${String(currentMonth).padStart(2, '0')}.png`;
+        // Construct image path based on data type
+        let imagePath;
+        if (dataType === 'temperature') {
+            imagePath = viewMode === 'monthly'
+                ? `data/temp_images/${currentYear}/${String(currentMonth).padStart(2, '0')}.png`
+                : `data/temp_averages/${String(currentMonth).padStart(2, '0')}.png`;
+        } else {
+            imagePath = viewMode === 'monthly'
+                ? `data/images/${currentYear}/${String(currentMonth).padStart(2, '0')}.png`
+                : `data/averages/${String(currentMonth).padStart(2, '0')}.png`;
+        }
 
         // Load and display image
         const img = await loadImage(imagePath);
@@ -243,6 +262,10 @@ async function updateDisplay() {
  * Preload adjacent months for smooth navigation
  */
 function preloadAdjacentImages() {
+    const baseDir = dataType === 'temperature'
+        ? (viewMode === 'monthly' ? 'data/temp_images' : 'data/temp_averages')
+        : (viewMode === 'monthly' ? 'data/images' : 'data/averages');
+
     if (viewMode === 'monthly') {
         // Preload next/previous month in same year
         const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
@@ -250,12 +273,13 @@ function preloadAdjacentImages() {
         const nextYear = currentMonth === 12 ? currentYear + 1 : currentYear;
         const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
-        if (metadata && metadata.years) {
-            if (metadata.years.includes(nextYear)) {
-                loadImage(`data/images/${nextYear}/${String(nextMonth).padStart(2, '0')}.png`).catch(() => {});
+        const activeMetadata = dataType === 'temperature' ? tempMetadata : metadata;
+        if (activeMetadata && activeMetadata.years) {
+            if (activeMetadata.years.includes(nextYear)) {
+                loadImage(`${baseDir}/${nextYear}/${String(nextMonth).padStart(2, '0')}.png`).catch(() => {});
             }
-            if (metadata.years.includes(prevYear)) {
-                loadImage(`data/images/${prevYear}/${String(prevMonth).padStart(2, '0')}.png`).catch(() => {});
+            if (activeMetadata.years.includes(prevYear)) {
+                loadImage(`${baseDir}/${prevYear}/${String(prevMonth).padStart(2, '0')}.png`).catch(() => {});
             }
         }
     } else {
@@ -263,8 +287,8 @@ function preloadAdjacentImages() {
         const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
         const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
 
-        loadImage(`data/averages/${String(nextMonth).padStart(2, '0')}.png`).catch(() => {});
-        loadImage(`data/averages/${String(prevMonth).padStart(2, '0')}.png`).catch(() => {});
+        loadImage(`${baseDir}/${String(nextMonth).padStart(2, '0')}.png`).catch(() => {});
+        loadImage(`${baseDir}/${String(prevMonth).padStart(2, '0')}.png`).catch(() => {});
     }
 }
 
@@ -325,9 +349,22 @@ function updateUI() {
     document.getElementById('yearSlider').value = currentYear;
     document.getElementById('monthSlider').value = currentMonth;
 
+    // Update data type buttons
+    document.getElementById('rainSunBtn').classList.toggle('active', dataType === 'rainsun');
+    document.getElementById('temperatureBtn').classList.toggle('active', dataType === 'temperature');
+
     // Update view mode buttons
     document.getElementById('monthlyBtn').classList.toggle('active', viewMode === 'monthly');
     document.getElementById('averagesBtn').classList.toggle('active', viewMode === 'averages');
+
+    // Update legend image based on data type
+    const legendImg = document.getElementById('legendImg');
+    legendImg.src = dataType === 'temperature'
+        ? 'data/temp_key_transparent.png'
+        : 'data/key_transparent.png';
+    legendImg.alt = dataType === 'temperature'
+        ? 'Temperature Color Key'
+        : 'Bivariate Color Key';
 
     // Disable/enable year slider based on view mode
     document.getElementById('yearSlider').disabled = viewMode === 'averages';
@@ -420,6 +457,23 @@ function playAnimation() {
 // ============================================================================
 
 function setupEventListeners() {
+    // Data type toggle
+    document.getElementById('rainSunBtn').addEventListener('click', () => {
+        dataType = 'rainsun';
+        updateUI();
+        updateDisplay();
+    });
+
+    document.getElementById('temperatureBtn').addEventListener('click', () => {
+        if (!tempMetadata) {
+            alert('Temperature data is not available. Please ensure temp_metadata.json is loaded.');
+            return;
+        }
+        dataType = 'temperature';
+        updateUI();
+        updateDisplay();
+    });
+
     // View mode toggle
     document.getElementById('monthlyBtn').addEventListener('click', () => {
         viewMode = 'monthly';

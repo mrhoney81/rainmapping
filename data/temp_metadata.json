@@ -1,0 +1,75 @@
+{
+  "extent": {
+    "x_min": -199500.0,
+    "x_max": 699500.0,
+    "y_min": -199500.0,
+    "y_max": 1249500.0,
+    "crs": "EPSG:27700",
+    "resolution_meters": 1000
+  },
+  "image_dimensions": {
+    "width": 900,
+    "height": 1450
+  },
+  "years": [
+    2010,
+    2011,
+    2012,
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "months": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "month_names": [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+  ],
+  "colors": [
+    "#053061",
+    "#2166ac",
+    "#4393c3",
+    "#92c5de",
+    "#d1e5f0",
+    "#fddbc7",
+    "#f4a582",
+    "#d6604d",
+    "#b2182b",
+    "#67001f"
+  ],
+  "generated_at": "2025-11-15T21:45:36.901911",
+  "total_images": 168,
+  "data_source": "CEDA HADUKGrid 1km - Maximum Temperature (tasmax)",
+  "variable": "tasmax",
+  "units": "degrees_Celsius"
+}

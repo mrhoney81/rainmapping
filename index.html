@@ -15,6 +15,15 @@
 
         <!-- Main Controls -->
         <div class="controls-panel">
+            <!-- Data Type Toggle -->
+            <div class="control-group">
+                <label class="control-label">Data Type</label>
+                <div class="view-toggle">
+                    <button id="rainSunBtn" class="toggle-btn active">Rainfall / Sunshine</button>
+                    <button id="temperatureBtn" class="toggle-btn">Temperature</button>
+                </div>
+            </div>
+
             <!-- View Mode Toggle -->
             <div class="control-group">
                 <label class="control-label">View Mode</label>
@@ -67,7 +76,7 @@
                 <div class="map-container">
                     <canvas id="mapCanvas"></canvas>
                     <div class="legend-container">
-                        <img src="data/key_transparent.png" class="legend" alt="Bivariate Color Key">
+                        <img id="legendImg" src="data/key_transparent.png" class="legend" alt="Color Key">
                     </div>
                     <div id="coordsDisplay" class="coords-display"></div>
                 </div>
