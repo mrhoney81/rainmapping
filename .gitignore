@@ -59,4 +59,5 @@ yarn-error.log*
 temp_data/
 rain_sun_data/
 leaflet_data/
+leaflet_overlays/
 *.nc
