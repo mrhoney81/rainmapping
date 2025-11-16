@@ -1,0 +1,13 @@
+{
+  "bounds": [
+    [
+      49.5,
+      -8.5
+    ],
+    [
+      61.0,
+      2.0
+    ]
+  ],
+  "projection": "EPSG:4326 (WGS84) - native to Leaflet"
+}

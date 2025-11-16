@@ -60,5 +60,4 @@ temp_data/
 rain_sun_data/
 leaflet_data/
 leaflet_overlays/
-leaflet_pngs/
 *.nc
