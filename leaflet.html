@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UK Climate Map - Leaflet Version</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Pako for gzip decompression -->
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+
+    <!-- Proj4 and Proj4Leaflet for BNG projection -->
+    <script src="https://cdn.jsdelivr.net/npm/proj4@2.9.0/dist/proj4.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/proj4leaflet@1.0.2/src/proj4leaflet.js"></script>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            z-index: 1000;
+            min-width: 300px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .control-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .control-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #444;
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #3a3a3a;
+            border-color: #555;
+        }
+
+        button.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        .slider-control {
+            margin-bottom: 15px;
+        }
+
+        .slider-control label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .slider-control input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+
+        .slider-control input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: none;
+        }
+
+        .legend {
+            margin-top: 15px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+        }
+
+        .legend h4 {
+            font-size: 12px;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .legend-gradient {
+            height: 30px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #999;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-size: 16px;
+        }
+
+        .info-box {
+            padding: 10px;
+            background: #2a2a2a;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .info-box div {
+            margin: 4px 0;
+        }
+
+        /* Scrollbar styling */
+        .controls::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .controls::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 4px;
+        }
+
+        .controls::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+
+        .controls::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div class="controls">
+        <div class="control-section">
+            <h3>Data Type</h3>
+            <div class="button-group">
+                <button id="rainSunBtn" class="active">Rain/Sun</button>
+                <button id="tempBtn">Temperature</button>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h3>Time Period</h3>
+            <div class="slider-control">
+                <label>
+                    <span>Year:</span>
+                    <span id="yearValue">2023</span>
+                </label>
+                <input type="range" id="yearSlider" min="2021" max="2023" value="2023">
+            </div>
+            <div class="slider-control">
+                <label>
+                    <span>Month:</span>
+                    <span id="monthValue">January</span>
+                </label>
+                <input type="range" id="monthSlider" min="1" max="12" value="1">
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h3>Display</h3>
+            <div class="slider-control">
+                <label>
+                    <span>Opacity:</span>
+                    <span id="opacityValue">70%</span>
+                </label>
+                <input type="range" id="opacitySlider" min="0" max="100" value="70">
+            </div>
+        </div>
+
+        <div class="control-section" id="legendSection">
+            <!-- Legend will be inserted here -->
+        </div>
+
+        <div class="info-box">
+            <div><strong>Map Info:</strong></div>
+            <div>• Drag to pan</div>
+            <div>• Scroll to zoom</div>
+            <div>• 1km resolution grid</div>
+            <div id="dataInfo"></div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">Loading data...</div>
+
+    <script src="leaflet-app.js"></script>
+</body>
+</html>
