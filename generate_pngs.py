@@ -91,8 +91,8 @@ def generate_temp_image(year, month):
     for row in range(IMG_HEIGHT):
         for col in range(IMG_WIDTH):
             # Convert pixel to lat/lng
-            # Row 0 should be at LAT_MIN (south/bottom), row IMG_HEIGHT at LAT_MAX (north/top)
-            lat = LAT_MIN + (row / IMG_HEIGHT) * (LAT_MAX - LAT_MIN)
+            # Row 0 should be at LAT_MAX (north/top), row IMG_HEIGHT at LAT_MIN (south/bottom)
+            lat = LAT_MAX - (row / IMG_HEIGHT) * (LAT_MAX - LAT_MIN)
             lng = LNG_MIN + (col / IMG_WIDTH) * (LNG_MAX - LNG_MIN)
 
             # Convert lat/lng to BNG
@@ -111,9 +111,8 @@ def generate_temp_image(year, month):
             except:
                 pass  # Outside BNG bounds
 
-    # Save PNG (flip vertically so row 0 of image displays at north)
-    img_array_flipped = np.flipud(img_array)
-    img = Image.fromarray(img_array_flipped, 'RGBA')
+    # Save PNG
+    img = Image.fromarray(img_array, 'RGBA')
     img.save(f"{OUTPUT_DIR}/temp/{year}_{month:02d}.png", optimize=True)
     print("✓")
 
@@ -149,8 +148,8 @@ def generate_rain_sun_image(year, month):
 
     for row in range(IMG_HEIGHT):
         for col in range(IMG_WIDTH):
-            # Row 0 should be at LAT_MIN (south/bottom), row IMG_HEIGHT at LAT_MAX (north/top)
-            lat = LAT_MIN + (row / IMG_HEIGHT) * (LAT_MAX - LAT_MIN)
+            # Row 0 should be at LAT_MAX (north/top), row IMG_HEIGHT at LAT_MIN (south/bottom)
+            lat = LAT_MAX - (row / IMG_HEIGHT) * (LAT_MAX - LAT_MIN)
             lng = LNG_MIN + (col / IMG_WIDTH) * (LNG_MAX - LNG_MIN)
 
             try:
@@ -169,9 +168,8 @@ def generate_rain_sun_image(year, month):
             except:
                 pass
 
-    # Save PNG (flip vertically so row 0 of image displays at north)
-    img_array_flipped = np.flipud(img_array)
-    img = Image.fromarray(img_array_flipped, 'RGBA')
+    # Save PNG
+    img = Image.fromarray(img_array, 'RGBA')
     img.save(f"{OUTPUT_DIR}/rain_sun/{year}_{month:02d}.png", optimize=True)
     print("✓")
 
