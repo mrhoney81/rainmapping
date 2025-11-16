@@ -1,5 +1,6 @@
 // ============================================================================
-// UK CLIMATE LEAFLET VIEWER - Proper bitmap rendering approach
+// UK CLIMATE LEAFLET VIEWER - Proper coordinate transformation per-cell
+// Using CanvasLayer with correct projection handling
 // ============================================================================
 
 const MONTH_NAMES = [
@@ -19,7 +20,7 @@ const BIVARIATE_COLORS = {
 };
 
 let map;
-let imageOverlay = null;
+let canvasLayer;
 let metadata;
 let currentYear = 2023;
 let currentMonth = 1;
@@ -28,8 +29,99 @@ let opacity = 0.7;
 let currentData = { rain: null, sun: null, temp: null };
 let dataCache = new Map();
 
-// BNG bounds (will be converted to lat/lng for ImageOverlay)
-let imageBounds = null;
+// Pre-computed grid data for fast rendering
+let gridData = null;
+
+// ============================================================================
+// CUSTOM CANVAS LAYER - renders to map projection correctly
+// ============================================================================
+
+L.GridCanvasLayer = L.Layer.extend({
+    initialize: function(options) {
+        L.setOptions(this, options);
+    },
+
+    onAdd: function(map) {
+        this._map = map;
+
+        if (!this._canvas) {
+            this._canvas = L.DomUtil.create('canvas', 'leaflet-layer');
+            this._ctx = this._canvas.getContext('2d');
+        }
+
+        this.getPane().appendChild(this._canvas);
+
+        this._reset();
+        map.on('moveend zoom', this._reset, this);
+    },
+
+    onRemove: function(map) {
+        this.getPane().removeChild(this._canvas);
+        map.off('moveend zoom', this._reset, this);
+    },
+
+    _reset: function() {
+        const size = this._map.getSize();
+        this._canvas.width = size.x;
+        this._canvas.height = size.y;
+
+        const topLeft = this._map.containerPointToLayerPoint([0, 0]);
+        L.DomUtil.setPosition(this._canvas, topLeft);
+
+        this._render();
+    },
+
+    setData: function(gridData) {
+        this._gridData = gridData;
+        this._render();
+    },
+
+    setOpacity: function(opacity) {
+        this._opacity = opacity;
+        this._render();
+    },
+
+    _render: function() {
+        if (!this._gridData || !this._gridData.length) return;
+
+        const ctx = this._ctx;
+        ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+        ctx.globalAlpha = this._opacity || 0.7;
+
+        // Get current map bounds
+        const bounds = this._map.getBounds();
+        const zoom = this._map.getZoom();
+
+        // Render each grid cell
+        for (const cell of this._gridData) {
+            // Check if cell is in view
+            if (cell.lat < bounds.getSouth() || cell.lat > bounds.getNorth() ||
+                cell.lng < bounds.getWest() || cell.lng > bounds.getEast()) {
+                continue;
+            }
+
+            // Get corners of 1km cell in screen coordinates
+            const nw = this._map.latLngToContainerPoint([cell.ne_lat, cell.nw_lng]);
+            const se = this._map.latLngToContainerPoint([cell.se_lat, cell.se_lng]);
+            const ne = this._map.latLngToContainerPoint([cell.ne_lat, cell.ne_lng]);
+            const sw = this._map.latLngToContainerPoint([cell.sw_lat, cell.sw_lng]);
+
+            // Draw as a quad (cells may be slightly skewed due to projection)
+            ctx.fillStyle = cell.color;
+            ctx.beginPath();
+            ctx.moveTo(nw.x, nw.y);
+            ctx.lineTo(ne.x, ne.y);
+            ctx.lineTo(se.x, se.y);
+            ctx.lineTo(sw.x, sw.y);
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+});
+
+L.gridCanvasLayer = function(options) {
+    return new L.GridCanvasLayer(options);
+};
 
 // ============================================================================
 // INITIALIZATION
@@ -42,13 +134,6 @@ async function init() {
         const response = await fetch('leaflet_data/metadata.json');
         metadata = await response.json();
         console.log('Metadata loaded:', metadata);
-
-        // Calculate image bounds
-        const sw = bngToLatLng(metadata.extent.x_min, metadata.extent.y_min);
-        const ne = bngToLatLng(metadata.extent.x_max, metadata.extent.y_max);
-        imageBounds = [[sw[0], sw[1]], [ne[0], ne[1]]];
-
-        console.log('Image bounds:', imageBounds);
 
         initMap();
         setupEventListeners();
@@ -66,8 +151,7 @@ async function init() {
 // ============================================================================
 
 function bngToLatLng(easting, northing) {
-    // BNG to WGS84 conversion using proj4
-    if (!window.proj4) return [0, 0];
+    if (!window.proj4) return null;
 
     if (!proj4.defs['EPSG:27700']) {
         proj4.defs('EPSG:27700',
@@ -78,7 +162,7 @@ function bngToLatLng(easting, northing) {
     }
 
     const [lng, lat] = proj4('EPSG:27700', 'EPSG:4326', [easting, northing]);
-    return [lat, lng];
+    return { lat, lng };
 }
 
 // ============================================================================
@@ -97,6 +181,8 @@ function initMap() {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
     }).addTo(map);
+
+    canvasLayer = L.gridCanvasLayer().addTo(map);
 
     console.log('Map initialized');
 }
@@ -152,7 +238,7 @@ async function loadAndDisplayData() {
             currentData.temp = temp;
         }
 
-        renderToImage();
+        prepareGridData();
         updateInfoBox();
     } catch (error) {
         console.error('Error loading data:', error);
@@ -162,147 +248,115 @@ async function loadAndDisplayData() {
 }
 
 // ============================================================================
-// RENDERING TO BITMAP
+// GRID DATA PREPARATION
 // ============================================================================
 
-function renderToImage() {
-    // Create canvas for bitmap rendering
-    const canvas = document.createElement('canvas');
-    const width = 900;  // Grid width from metadata
-    const height = 1450; // Grid height from metadata
+function prepareGridData() {
+    console.time('prepareGridData');
 
-    canvas.width = width;
-    canvas.height = height;
-
-    const ctx = canvas.getContext('2d');
-    const imageData = ctx.createImageData(width, height);
-    const data = imageData.data;
+    gridData = [];
+    const extent = metadata.extent;
+    const resolution = extent.resolution_meters;
+    const halfRes = resolution / 2;
 
     if (dataType === 'temp') {
-        renderTempToBitmap(data, width, height);
-    } else {
-        renderRainSunToBitmap(data, width, height);
-    }
+        const tempData = currentData.temp;
+        if (!tempData) return;
 
-    ctx.putImageData(imageData, 0, 0);
+        const tempScale = metadata.temperature.scale_range;
 
-    // Convert canvas to data URL
-    const imageUrl = canvas.toDataURL('image/png');
+        Object.entries(tempData).forEach(([x, yData]) => {
+            Object.entries(yData).forEach(([y, temp]) => {
+                const bngX = parseFloat(x);
+                const bngY = parseFloat(y);
 
-    // Update or create ImageOverlay
-    if (imageOverlay) {
-        map.removeLayer(imageOverlay);
-    }
+                // Get cell corners in BNG
+                const sw = bngToLatLng(bngX - halfRes, bngY - halfRes);
+                const se = bngToLatLng(bngX + halfRes, bngY - halfRes);
+                const ne = bngToLatLng(bngX + halfRes, bngY + halfRes);
+                const nw = bngToLatLng(bngX - halfRes, bngY + halfRes);
 
-    imageOverlay = L.imageOverlay(imageUrl, imageBounds, {
-        opacity: opacity,
-        interactive: false
-    });
+                if (!sw || !se || !ne || !nw) return;
 
-    imageOverlay.addTo(map);
-}
-
-function renderTempToBitmap(data, width, height) {
-    const tempData = currentData.temp;
-    if (!tempData) return;
-
-    const tempScale = metadata.temperature.scale_range;
-    const extent = metadata.extent;
-    const resolution = extent.resolution_meters;
-
-    // Create lookup for faster access
-    // NOTE: Image rows go top-to-bottom (0 = top), but we want top = north (y_max)
-    // So row 0 should be y_max, row increases downward toward y_min
-    for (let row = 0; row < height; row++) {
-        for (let col = 0; col < width; col++) {
-            // Calculate BNG coordinates for this cell (center)
-            const x = extent.x_min + (col + 0.5) * resolution;
-            const y = extent.y_min + (row + 0.5) * resolution;  // FLIPPED: row 0 = y_min (south/bottom)
-
-            const xKey = Math.round(x).toString();
-            const yKey = Math.round(y).toString();
-
-            if (tempData[xKey] && tempData[xKey][yKey] !== undefined) {
-                const temp = tempData[xKey][yKey];
                 const color = getTempColor(temp, tempScale.min, tempScale.max);
-                const rgb = hexToRgb(color);
 
-                const idx = (row * width + col) * 4;
-                data[idx] = rgb[0];     // R
-                data[idx + 1] = rgb[1]; // G
-                data[idx + 2] = rgb[2]; // B
-                data[idx + 3] = 255;    // A
-            }
-        }
-    }
-}
+                gridData.push({
+                    lat: sw.lat + (ne.lat - sw.lat) / 2,  // center for bounds checking
+                    lng: sw.lng + (ne.lng - sw.lng) / 2,
+                    sw_lat: sw.lat, sw_lng: sw.lng,
+                    se_lat: se.lat, se_lng: se.lng,
+                    ne_lat: ne.lat, ne_lng: ne.lng,
+                    nw_lat: nw.lat, nw_lng: nw.lng,
+                    color: color
+                });
+            });
+        });
+    } else {
+        const rainData = currentData.rain;
+        const sunData = currentData.sun;
+        if (!rainData || !sunData) return;
 
-function renderRainSunToBitmap(data, width, height) {
-    const rainData = currentData.rain;
-    const sunData = currentData.sun;
-    if (!rainData || !sunData) return;
+        // Calculate percentiles
+        const rainValues = [];
+        const sunValues = [];
 
-    // Calculate percentiles
-    const rainValues = [];
-    const sunValues = [];
+        Object.values(rainData).forEach(yData => {
+            Object.values(yData).forEach(val => rainValues.push(val));
+        });
+        Object.values(sunData).forEach(yData => {
+            Object.values(yData).forEach(val => sunValues.push(val));
+        });
 
-    Object.values(rainData).forEach(yData => {
-        Object.values(yData).forEach(val => rainValues.push(val));
-    });
-    Object.values(sunData).forEach(yData => {
-        Object.values(yData).forEach(val => sunValues.push(val));
-    });
+        rainValues.sort((a, b) => a - b);
+        sunValues.sort((a, b) => a - b);
 
-    rainValues.sort((a, b) => a - b);
-    sunValues.sort((a, b) => a - b);
+        const rain33 = rainValues[Math.floor(rainValues.length * 0.33)];
+        const rain66 = rainValues[Math.floor(rainValues.length * 0.66)];
+        const sun33 = sunValues[Math.floor(sunValues.length * 0.33)];
+        const sun66 = sunValues[Math.floor(sunValues.length * 0.66)];
 
-    const rain33 = rainValues[Math.floor(rainValues.length * 0.33)];
-    const rain66 = rainValues[Math.floor(rainValues.length * 0.66)];
-    const sun33 = sunValues[Math.floor(sunValues.length * 0.33)];
-    const sun66 = sunValues[Math.floor(sunValues.length * 0.66)];
+        Object.entries(rainData).forEach(([x, yData]) => {
+            Object.entries(yData).forEach(([y, rainVal]) => {
+                const sunVal = sunData[x]?.[y];
+                if (sunVal === undefined) return;
 
-    const extent = metadata.extent;
-    const resolution = extent.resolution_meters;
+                const bngX = parseFloat(x);
+                const bngY = parseFloat(y);
 
-    for (let row = 0; row < height; row++) {
-        for (let col = 0; col < width; col++) {
-            const x = extent.x_min + (col + 0.5) * resolution;
-            const y = extent.y_min + (row + 0.5) * resolution;  // FLIPPED: row 0 = y_min (south/bottom)
+                const sw = bngToLatLng(bngX - halfRes, bngY - halfRes);
+                const se = bngToLatLng(bngX + halfRes, bngY - halfRes);
+                const ne = bngToLatLng(bngX + halfRes, bngY + halfRes);
+                const nw = bngToLatLng(bngX - halfRes, bngY + halfRes);
 
-            const xKey = Math.round(x).toString();
-            const yKey = Math.round(y).toString();
-
-            if (rainData[xKey] && rainData[xKey][yKey] !== undefined &&
-                sunData[xKey] && sunData[xKey][yKey] !== undefined) {
-
-                const rainVal = rainData[xKey][yKey];
-                const sunVal = sunData[xKey][yKey];
+                if (!sw || !se || !ne || !nw) return;
 
                 const color = getBivariateColor(rainVal, sunVal, rain33, rain66, sun33, sun66);
-                const rgb = hexToRgb(color);
 
-                const idx = (row * width + col) * 4;
-                data[idx] = rgb[0];
-                data[idx + 1] = rgb[1];
-                data[idx + 2] = rgb[2];
-                data[idx + 3] = 255;
-            }
-        }
+                gridData.push({
+                    lat: sw.lat + (ne.lat - sw.lat) / 2,
+                    lng: sw.lng + (ne.lng - sw.lng) / 2,
+                    sw_lat: sw.lat, sw_lng: sw.lng,
+                    se_lat: se.lat, se_lng: se.lng,
+                    ne_lat: ne.lat, ne_lng: ne.lng,
+                    nw_lat: nw.lat, nw_lng: nw.lng,
+                    color: color
+                });
+            });
+        });
+    }
+
+    console.timeEnd('prepareGridData');
+    console.log(`Prepared ${gridData.length} grid cells`);
+
+    if (canvasLayer) {
+        canvasLayer.setData(gridData);
+        canvasLayer.setOpacity(opacity);
     }
 }
 
 // ============================================================================
 // COLOR FUNCTIONS
 // ============================================================================
-
-function hexToRgb(hex) {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? [
-        parseInt(result[1], 16),
-        parseInt(result[2], 16),
-        parseInt(result[3], 16)
-    ] : [0, 0, 0];
-}
 
 function getTempColor(temp, minTemp, maxTemp) {
     const normalized = (temp - minTemp) / (maxTemp - minTemp);
@@ -416,8 +470,8 @@ function setupEventListeners() {
     document.getElementById('opacitySlider').addEventListener('input', (e) => {
         opacity = parseInt(e.target.value) / 100;
         updateUI();
-        if (imageOverlay) {
-            imageOverlay.setOpacity(opacity);
+        if (canvasLayer) {
+            canvasLayer.setOpacity(opacity);
         }
     });
 }
