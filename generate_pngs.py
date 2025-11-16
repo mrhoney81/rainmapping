@@ -111,8 +111,9 @@ def generate_temp_image(year, month):
             except:
                 pass  # Outside BNG bounds
 
-    # Save PNG
-    img = Image.fromarray(img_array, 'RGBA')
+    # Save PNG (flip vertically so row 0 of image displays at north)
+    img_array_flipped = np.flipud(img_array)
+    img = Image.fromarray(img_array_flipped, 'RGBA')
     img.save(f"{OUTPUT_DIR}/temp/{year}_{month:02d}.png", optimize=True)
     print("✓")
 
@@ -168,7 +169,9 @@ def generate_rain_sun_image(year, month):
             except:
                 pass
 
-    img = Image.fromarray(img_array, 'RGBA')
+    # Save PNG (flip vertically so row 0 of image displays at north)
+    img_array_flipped = np.flipud(img_array)
+    img = Image.fromarray(img_array_flipped, 'RGBA')
     img.save(f"{OUTPUT_DIR}/rain_sun/{year}_{month:02d}.png", optimize=True)
     print("✓")
 
