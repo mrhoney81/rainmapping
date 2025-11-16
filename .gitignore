@@ -54,3 +54,9 @@ yarn-error.log*
 # Temporary files
 *.tmp
 .cache/
+
+# Large data directories for leaflet version
+temp_data/
+rain_sun_data/
+leaflet_data/
+*.nc
