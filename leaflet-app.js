@@ -211,11 +211,13 @@ function renderTempToBitmap(data, width, height) {
     const resolution = extent.resolution_meters;
 
     // Create lookup for faster access
+    // NOTE: Image rows go top-to-bottom (0 = top), but we want top = north (y_max)
+    // So row 0 should be y_max, row increases downward toward y_min
     for (let row = 0; row < height; row++) {
         for (let col = 0; col < width; col++) {
             // Calculate BNG coordinates for this cell (center)
             const x = extent.x_min + (col + 0.5) * resolution;
-            const y = extent.y_max - (row + 0.5) * resolution;
+            const y = extent.y_min + (row + 0.5) * resolution;  // FLIPPED: row 0 = y_min (south/bottom)
 
             const xKey = Math.round(x).toString();
             const yKey = Math.round(y).toString();
@@ -265,7 +267,7 @@ function renderRainSunToBitmap(data, width, height) {
     for (let row = 0; row < height; row++) {
         for (let col = 0; col < width; col++) {
             const x = extent.x_min + (col + 0.5) * resolution;
-            const y = extent.y_max - (row + 0.5) * resolution;
+            const y = extent.y_min + (row + 0.5) * resolution;  // FLIPPED: row 0 = y_min (south/bottom)
 
             const xKey = Math.round(x).toString();
             const yKey = Math.round(y).toString();
