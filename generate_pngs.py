@@ -91,7 +91,8 @@ def generate_temp_image(year, month):
     for row in range(IMG_HEIGHT):
         for col in range(IMG_WIDTH):
             # Convert pixel to lat/lng
-            lat = LAT_MAX - (row / IMG_HEIGHT) * (LAT_MAX - LAT_MIN)
+            # Row 0 should be at LAT_MIN (south/bottom), row IMG_HEIGHT at LAT_MAX (north/top)
+            lat = LAT_MIN + (row / IMG_HEIGHT) * (LAT_MAX - LAT_MIN)
             lng = LNG_MIN + (col / IMG_WIDTH) * (LNG_MAX - LNG_MIN)
 
             # Convert lat/lng to BNG
@@ -147,7 +148,8 @@ def generate_rain_sun_image(year, month):
 
     for row in range(IMG_HEIGHT):
         for col in range(IMG_WIDTH):
-            lat = LAT_MAX - (row / IMG_HEIGHT) * (LAT_MAX - LAT_MIN)
+            # Row 0 should be at LAT_MIN (south/bottom), row IMG_HEIGHT at LAT_MAX (north/top)
+            lat = LAT_MIN + (row / IMG_HEIGHT) * (LAT_MAX - LAT_MIN)
             lng = LNG_MIN + (col / IMG_WIDTH) * (LNG_MAX - LNG_MIN)
 
             try:
