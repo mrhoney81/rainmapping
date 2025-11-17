@@ -63,10 +63,15 @@ for x_key, y_dict in sample_data.items():
     for y_key in y_dict.keys():
         northings.append(int(y_key))
 
+# Filter bounds to exclude Channel Islands (below northing -10000)
+# This prevents the overlay from shifting too far south
+MIN_NORTHING = -10000  # Include Isles of Scilly but exclude Channel Islands
+filtered_northings = [n for n in northings if n >= MIN_NORTHING]
+
 bng_x_min = min(eastings)
 bng_x_max = max(eastings)
-bng_y_min = min(northings)
-bng_y_max = max(northings)
+bng_y_min = min(filtered_northings)
+bng_y_max = max(filtered_northings)
 
 print(f"BNG extent:")
 print(f"  Easting:  {bng_x_min:,} to {bng_x_max:,}")
