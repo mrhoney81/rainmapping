@@ -1,13 +1,23 @@
 {
   "bounds": [
     [
-      49.5,
-      -8.5
+      48.26232516398099,
+      -7.3775697433291025
     ],
     [
-      61.0,
-      2.0
+      59.17835312117063,
+      2.4793437372112455
     ]
   ],
-  "projection": "EPSG:4326 (WGS84) - native to Leaflet"
+  "projection": "Web Mercator (EPSG:3857) \u2192 WGS84 bounds",
+  "bng_extent": {
+    "easting": [
+      1000,
+      656000
+    ],
+    "northing": [
+      -168000,
+      1041000
+    ]
+  }
 }
