@@ -156,6 +156,9 @@ def generate_temp_image(year, month):
             except:
                 pass  # Outside bounds
 
+    # Flip vertically (row 0 in array should be at top of displayed image)
+    img_array = np.flipud(img_array)
+
     # Save PNG
     img = Image.fromarray(img_array, 'RGBA')
     img.save(f"{OUTPUT_DIR}/temp/{year}_{month:02d}.png", optimize=True)
@@ -216,6 +219,9 @@ def generate_rain_sun_image(year, month):
                     img_array[row, col] = [r, g, b, 255]
             except:
                 pass
+
+    # Flip vertically (row 0 in array should be at top of displayed image)
+    img_array = np.flipud(img_array)
 
     # Save PNG
     img = Image.fromarray(img_array, 'RGBA')
