@@ -18,8 +18,8 @@ const BIVARIATE_COLORS = {
     2: { 0: "#509dc2", 1: "#376387", 2: "#000000" }
 };
 
-// Image bounds from generate_pngs.py
-const IMAGE_BOUNDS = [[49.5, -8.5], [61.0, 2.0]];
+// Image bounds - loaded from bounds.json
+let IMAGE_BOUNDS = null;
 
 let map;
 let currentOverlay = null;
@@ -32,8 +32,20 @@ let opacity = 0.7;
 // INITIALIZATION
 // ============================================================================
 
-function init() {
+async function init() {
     console.log('Initializing Leaflet Climate Viewer...');
+
+    // Load bounds from JSON
+    try {
+        const response = await fetch('leaflet_pngs/bounds.json');
+        const boundsData = await response.json();
+        IMAGE_BOUNDS = boundsData.bounds;
+        console.log('Loaded bounds:', IMAGE_BOUNDS);
+    } catch (error) {
+        console.error('Failed to load bounds.json:', error);
+        alert('Failed to load image bounds. Make sure you ran: python3 generate_pngs.py');
+        return;
+    }
 
     initMap();
     setupEventListeners();
