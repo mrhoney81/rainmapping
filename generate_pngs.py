@@ -63,17 +63,28 @@ for x_key, y_dict in sample_data.items():
     for y_key in y_dict.keys():
         northings.append(int(y_key))
 
-# Filter bounds to exclude Channel Islands (below northing -10000)
-# This prevents the overlay from shifting too far south
-MIN_NORTHING = -10000  # Include Isles of Scilly but exclude Channel Islands
-filtered_northings = [n for n in northings if n >= MIN_NORTHING]
+# Use proper UK bounds instead of data extremes
+# Data has outliers (remote islands) that distort the map
+# UK mainland + nearby islands: roughly 0-700km E, 0-1250km N
 
-bng_x_min = min(eastings)
-bng_x_max = max(eastings)
-bng_y_min = min(filtered_northings)
-bng_y_max = max(filtered_northings)
+# Get rough data extent
+data_e_min, data_e_max = min(eastings), max(eastings)
+data_n_min, data_n_max = min(northings), max(northings)
 
-print(f"BNG extent:")
+# Use sensible UK bounds
+# South: Isles of Scilly (~0 northing)
+# North: Shetland (~1,220,000 northing)
+# West: Western Isles (~0 easting)
+# East: East Anglia (~660,000 easting)
+bng_x_min = 0
+bng_x_max = 700000
+bng_y_min = 0
+bng_y_max = 1250000
+
+print(f"Data extent (with outliers):")
+print(f"  Easting:  {data_e_min:,} to {data_e_max:,}")
+print(f"  Northing: {data_n_min:,} to {data_n_max:,}")
+print(f"Using UK standard bounds:")
 print(f"  Easting:  {bng_x_min:,} to {bng_x_max:,}")
 print(f"  Northing: {bng_y_min:,} to {bng_y_max:,}")
 
