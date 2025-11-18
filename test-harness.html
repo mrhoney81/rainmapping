@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNG Overlay Test Harness</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- html2canvas for screenshots -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+
+        input[type="file"],
+        input[type="number"],
+        input[type="range"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            cursor: pointer;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: #6b7280;
+        }
+
+        button.secondary:hover {
+            background: #4b5563;
+        }
+
+        button.danger {
+            background: #dc2626;
+        }
+
+        button.danger:hover {
+            background: #b91c1c;
+        }
+
+        #map {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .info-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f9ff;
+            border-left: 4px solid #2563eb;
+            border-radius: 4px;
+        }
+
+        .info-panel h3 {
+            margin-bottom: 10px;
+            color: #1e40af;
+        }
+
+        .info-item {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 10px;
+            margin: 8px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .info-value {
+            color: #1f2937;
+            font-family: 'Courier New', monospace;
+        }
+
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            color: #92400e;
+        }
+
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            border-radius: 4px;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #92400e;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+            color: #78350f;
+        }
+
+        .marker-info {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .screenshot-output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+            border-radius: 4px;
+        }
+
+        .screenshot-output h3 {
+            margin-bottom: 10px;
+            color: #065f46;
+        }
+
+        .screenshot-output img {
+            max-width: 100%;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ PNG Overlay Test Harness</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="pngFile">Upload PNG Overlay:</label>
+                <input type="file" id="pngFile" accept="image/png,image/jpeg,image/jpg">
+            </div>
+
+            <div class="control-group">
+                <label for="overlayOpacity">Overlay Opacity: <span id="opacityValue">0.6</span></label>
+                <input type="range" id="overlayOpacity" min="0" max="1" step="0.1" value="0.6">
+            </div>
+
+            <div class="control-group">
+                <label>Map Center Latitude:</label>
+                <input type="number" id="centerLat" value="54.5" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <label>Map Center Longitude:</label>
+                <input type="number" id="centerLng" value="-3.0" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <label>Overlay North Bound:</label>
+                <input type="number" id="northBound" value="60.0" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <label>Overlay South Bound:</label>
+                <input type="number" id="southBound" value="49.0" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <label>Overlay West Bound:</label>
+                <input type="number" id="westBound" value="-8.0" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <label>Overlay East Bound:</label>
+                <input type="number" id="eastBound" value="2.0" step="0.1">
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button id="updateOverlay">Update Overlay Position</button>
+            <button id="takeScreenshot" class="secondary">📸 Take Screenshot</button>
+            <button id="clearPoints" class="danger">Clear Points</button>
+            <button id="resetView" class="secondary">Reset View</button>
+        </div>
+
+        <div id="map"></div>
+
+        <div class="info-panel">
+            <h3>📍 Measurement Information</h3>
+            <div class="info-item">
+                <span class="info-label">Points Placed:</span>
+                <span class="info-value" id="pointsCount">0 / 2</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Point 1 Coordinates:</span>
+                <span class="info-value" id="point1Coords">Not set</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Point 1 Pixel Position:</span>
+                <span class="info-value" id="point1Pixel">Not set</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Point 2 Coordinates:</span>
+                <span class="info-value" id="point2Coords">Not set</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Point 2 Pixel Position:</span>
+                <span class="info-value" id="point2Pixel">Not set</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Pixel Distance:</span>
+                <span class="info-value" id="pixelDistance"><span class="highlight">Not calculated</span></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Geographic Distance:</span>
+                <span class="info-value" id="geoDistance">Not calculated</span>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Instructions</h3>
+            <ol>
+                <li>Upload a PNG file to overlay on the map</li>
+                <li>Adjust the overlay bounds (coordinates) to match your data</li>
+                <li>Click "Update Overlay Position" to reposition the overlay</li>
+                <li>Click on the map to place two measurement points</li>
+                <li>The pixel distance between points will be calculated automatically</li>
+                <li>Click "Take Screenshot" to capture the current view</li>
+                <li>Use "Clear Points" to remove markers and start over</li>
+            </ol>
+        </div>
+
+        <div id="screenshotOutput" class="screenshot-output" style="display: none;">
+            <h3>📸 Screenshot Output</h3>
+            <div class="info-item">
+                <span class="info-label">Screenshot Resolution:</span>
+                <span class="info-value" id="screenshotRes">N/A</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Pixel Distance in Screenshot:</span>
+                <span class="info-value" id="screenshotDistance"><span class="highlight">N/A</span></span>
+            </div>
+            <img id="screenshotImg" alt="Screenshot">
+            <br><br>
+            <button id="downloadScreenshot">💾 Download Screenshot</button>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // ============================================================================
+        // GLOBAL STATE
+        // ============================================================================
+
+        let map;
+        let imageOverlay = null;
+        let markers = [];
+        let points = [];
+        let measurementLine = null;
+        let currentImageUrl = null;
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+
+        function initMap() {
+            // Initialize the map centered on UK
+            map = L.map('map', {
+                center: [54.5, -3.0],
+                zoom: 6,
+                preferCanvas: true
+            });
+
+            // Add OpenStreetMap tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Add click handler for placing points
+            map.on('click', onMapClick);
+
+            console.log('Map initialized');
+        }
+
+        // ============================================================================
+        // PNG OVERLAY HANDLING
+        // ============================================================================
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Revoke previous object URL if exists
+            if (currentImageUrl) {
+                URL.revokeObjectURL(currentImageUrl);
+            }
+
+            // Create new object URL
+            currentImageUrl = URL.createObjectURL(file);
+
+            // Update the overlay
+            updateOverlay();
+
+            console.log('PNG file loaded:', file.name);
+        }
+
+        function updateOverlay() {
+            if (!currentImageUrl) {
+                alert('Please upload a PNG file first');
+                return;
+            }
+
+            // Get bounds from inputs
+            const north = parseFloat(document.getElementById('northBound').value);
+            const south = parseFloat(document.getElementById('southBound').value);
+            const west = parseFloat(document.getElementById('westBound').value);
+            const east = parseFloat(document.getElementById('eastBound').value);
+
+            const bounds = [[south, west], [north, east]];
+
+            // Remove existing overlay if present
+            if (imageOverlay) {
+                map.removeLayer(imageOverlay);
+            }
+
+            // Create new overlay
+            imageOverlay = L.imageOverlay(currentImageUrl, bounds, {
+                opacity: parseFloat(document.getElementById('overlayOpacity').value),
+                interactive: false
+            }).addTo(map);
+
+            // Fit map to overlay bounds
+            map.fitBounds(bounds);
+
+            console.log('Overlay updated with bounds:', bounds);
+        }
+
+        function updateOpacity() {
+            const opacity = parseFloat(document.getElementById('overlayOpacity').value);
+            document.getElementById('opacityValue').textContent = opacity.toFixed(1);
+
+            if (imageOverlay) {
+                imageOverlay.setOpacity(opacity);
+            }
+        }
+
+        // ============================================================================
+        // POINT PLACEMENT AND MEASUREMENT
+        // ============================================================================
+
+        function onMapClick(e) {
+            // Only allow 2 points
+            if (points.length >= 2) {
+                alert('Maximum 2 points allowed. Click "Clear Points" to start over.');
+                return;
+            }
+
+            const latlng = e.latlng;
+
+            // Get pixel position relative to map container
+            const pixelPoint = map.latLngToContainerPoint(latlng);
+
+            // Create marker
+            const markerNumber = points.length + 1;
+            const marker = L.circleMarker(latlng, {
+                radius: 8,
+                fillColor: markerNumber === 1 ? '#ef4444' : '#3b82f6',
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map);
+
+            // Add label
+            marker.bindTooltip(`Point ${markerNumber}`, {
+                permanent: true,
+                direction: 'top',
+                className: 'marker-info'
+            });
+
+            markers.push(marker);
+            points.push({ latlng, pixel: pixelPoint });
+
+            updateInfoPanel();
+
+            // If we have 2 points, draw a line and calculate distance
+            if (points.length === 2) {
+                drawMeasurementLine();
+                calculateDistance();
+            }
+
+            console.log(`Point ${markerNumber} placed at:`, latlng, 'Pixel:', pixelPoint);
+        }
+
+        function drawMeasurementLine() {
+            if (measurementLine) {
+                map.removeLayer(measurementLine);
+            }
+
+            measurementLine = L.polyline([points[0].latlng, points[1].latlng], {
+                color: '#8b5cf6',
+                weight: 3,
+                dashArray: '10, 10',
+                opacity: 0.8
+            }).addTo(map);
+        }
+
+        function calculateDistance() {
+            if (points.length !== 2) return;
+
+            // Recalculate pixel positions (in case of zoom/pan)
+            const pixel1 = map.latLngToContainerPoint(points[0].latlng);
+            const pixel2 = map.latLngToContainerPoint(points[1].latlng);
+
+            // Calculate pixel distance
+            const dx = pixel2.x - pixel1.x;
+            const dy = pixel2.y - pixel1.y;
+            const pixelDistance = Math.sqrt(dx * dx + dy * dy);
+
+            // Calculate geographic distance (in meters)
+            const geoDistance = points[0].latlng.distanceTo(points[1].latlng);
+
+            // Update display
+            document.getElementById('pixelDistance').innerHTML =
+                `<span class="highlight">${pixelDistance.toFixed(2)} pixels</span>`;
+            document.getElementById('geoDistance').textContent =
+                `${(geoDistance / 1000).toFixed(2)} km (${geoDistance.toFixed(0)} meters)`;
+
+            console.log('Distance calculated:', { pixelDistance, geoDistance });
+        }
+
+        function updateInfoPanel() {
+            document.getElementById('pointsCount').textContent = `${points.length} / 2`;
+
+            if (points.length >= 1) {
+                const p1 = points[0];
+                document.getElementById('point1Coords').textContent =
+                    `Lat: ${p1.latlng.lat.toFixed(6)}, Lng: ${p1.latlng.lng.toFixed(6)}`;
+                document.getElementById('point1Pixel').textContent =
+                    `X: ${p1.pixel.x.toFixed(1)}, Y: ${p1.pixel.y.toFixed(1)}`;
+            }
+
+            if (points.length >= 2) {
+                const p2 = points[1];
+                document.getElementById('point2Coords').textContent =
+                    `Lat: ${p2.latlng.lat.toFixed(6)}, Lng: ${p2.latlng.lng.toFixed(6)}`;
+                document.getElementById('point2Pixel').textContent =
+                    `X: ${p2.pixel.x.toFixed(1)}, Y: ${p2.pixel.y.toFixed(1)}`;
+            }
+        }
+
+        function clearPoints() {
+            // Remove all markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            points = [];
+
+            // Remove measurement line
+            if (measurementLine) {
+                map.removeLayer(measurementLine);
+                measurementLine = null;
+            }
+
+            // Reset info panel
+            document.getElementById('pointsCount').textContent = '0 / 2';
+            document.getElementById('point1Coords').textContent = 'Not set';
+            document.getElementById('point1Pixel').textContent = 'Not set';
+            document.getElementById('point2Coords').textContent = 'Not set';
+            document.getElementById('point2Pixel').textContent = 'Not set';
+            document.getElementById('pixelDistance').innerHTML = '<span class="highlight">Not calculated</span>';
+            document.getElementById('geoDistance').textContent = 'Not calculated';
+
+            console.log('Points cleared');
+        }
+
+        function resetView() {
+            const lat = parseFloat(document.getElementById('centerLat').value);
+            const lng = parseFloat(document.getElementById('centerLng').value);
+            map.setView([lat, lng], 6);
+        }
+
+        // ============================================================================
+        // SCREENSHOT FUNCTIONALITY
+        // ============================================================================
+
+        async function takeScreenshot() {
+            try {
+                const mapElement = document.getElementById('map');
+
+                // Take screenshot using html2canvas
+                const canvas = await html2canvas(mapElement, {
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff'
+                });
+
+                // Convert to data URL
+                const dataUrl = canvas.toDataURL('image/png');
+
+                // Display screenshot
+                const screenshotOutput = document.getElementById('screenshotOutput');
+                const screenshotImg = document.getElementById('screenshotImg');
+                screenshotImg.src = dataUrl;
+                screenshotOutput.style.display = 'block';
+
+                // Update screenshot info
+                document.getElementById('screenshotRes').textContent =
+                    `${canvas.width} x ${canvas.height} pixels`;
+
+                // Calculate pixel distance in screenshot if points exist
+                if (points.length === 2) {
+                    // Get the map container dimensions
+                    const mapRect = mapElement.getBoundingClientRect();
+                    const scaleX = canvas.width / mapRect.width;
+                    const scaleY = canvas.height / mapRect.height;
+
+                    // Recalculate pixel positions
+                    const pixel1 = map.latLngToContainerPoint(points[0].latlng);
+                    const pixel2 = map.latLngToContainerPoint(points[1].latlng);
+
+                    // Scale to screenshot dimensions
+                    const dx = (pixel2.x - pixel1.x) * scaleX;
+                    const dy = (pixel2.y - pixel1.y) * scaleY;
+                    const screenshotDistance = Math.sqrt(dx * dx + dy * dy);
+
+                    document.getElementById('screenshotDistance').innerHTML =
+                        `<span class="highlight">${screenshotDistance.toFixed(2)} pixels</span>`;
+                } else {
+                    document.getElementById('screenshotDistance').innerHTML =
+                        '<span class="highlight">No points to measure</span>';
+                }
+
+                console.log('Screenshot captured:', canvas.width, 'x', canvas.height);
+
+                // Scroll to screenshot
+                screenshotOutput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (error) {
+                console.error('Screenshot error:', error);
+                alert('Failed to capture screenshot. Please try again.');
+            }
+        }
+
+        function downloadScreenshot() {
+            const img = document.getElementById('screenshotImg');
+            const link = document.createElement('a');
+            link.download = `map-screenshot-${Date.now()}.png`;
+            link.href = img.src;
+            link.click();
+
+            console.log('Screenshot downloaded');
+        }
+
+        // ============================================================================
+        // EVENT LISTENERS
+        // ============================================================================
+
+        function setupEventListeners() {
+            document.getElementById('pngFile').addEventListener('change', handleFileUpload);
+            document.getElementById('overlayOpacity').addEventListener('input', updateOpacity);
+            document.getElementById('updateOverlay').addEventListener('click', updateOverlay);
+            document.getElementById('takeScreenshot').addEventListener('click', takeScreenshot);
+            document.getElementById('clearPoints').addEventListener('click', clearPoints);
+            document.getElementById('resetView').addEventListener('click', resetView);
+            document.getElementById('downloadScreenshot').addEventListener('click', downloadScreenshot);
+
+            // Update map center when inputs change
+            document.getElementById('centerLat').addEventListener('change', resetView);
+            document.getElementById('centerLng').addEventListener('change', resetView);
+
+            // Recalculate distances on zoom/pan
+            map.on('zoomend moveend', () => {
+                if (points.length === 2) {
+                    calculateDistance();
+                    updateInfoPanel();
+                }
+            });
+        }
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            setupEventListeners();
+            console.log('Test harness initialized');
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (currentImageUrl) {
+                URL.revokeObjectURL(currentImageUrl);
+            }
+        });
+    </script>
+</body>
+</html>
