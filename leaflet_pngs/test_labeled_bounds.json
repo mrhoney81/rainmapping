@@ -1,0 +1,14 @@
+{
+  "bounds": [
+    [
+      49.766807235142615,
+      -7.557159806905192
+    ],
+    [
+      61.018407539428694,
+      3.55511700533046
+    ]
+  ],
+  "description": "Test image with NORTH/SOUTH labels",
+  "instructions": "When displayed correctly in Leaflet: NORTH (blue) should be at top, SOUTH (red) should be at bottom"
+}

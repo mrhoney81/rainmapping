@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Labeled Test - Is it Upside Down?</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100%; }
+        .info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            z-index: 1000;
+            max-width: 350px;
+            font-family: Arial, sans-serif;
+        }
+        h2 { margin-top: 0; color: #333; }
+        .correct { color: green; font-weight: bold; }
+        .wrong { color: red; font-weight: bold; }
+        button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            cursor: pointer;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <h2>Orientation Test</h2>
+        <p><strong>CORRECT orientation:</strong></p>
+        <ul class="correct">
+            <li>Blue "NORTH" at TOP of map</li>
+            <li>Red "SOUTH" at BOTTOM of map</li>
+            <li>Edinburgh in middle-north</li>
+            <li>Isle of Wight in south</li>
+        </ul>
+        <p><strong class="wrong">If UPSIDE DOWN:</strong></p>
+        <ul class="wrong">
+            <li>Red "SOUTH" at TOP</li>
+            <li>Blue "NORTH" at BOTTOM</li>
+        </ul>
+        <button onclick="map.setView([54.5, -3.0], 6)">Zoom to UK</button>
+        <button onclick="map.setView([61, -3], 7)">Zoom to NORTH label</button>
+        <button onclick="map.setView([50, -3], 7)">Zoom to SOUTH label</button>
+        <button id="toggle">Toggle Overlay</button>
+    </div>
+    <div id="map"></div>
+
+    <script>
+        const map = L.map('map', {
+            center: [54.5, -3.0],
+            zoom: 6
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap',
+            maxZoom: 19
+        }).addTo(map);
+
+        let overlay;
+        fetch('leaflet_pngs/test_labeled_bounds.json')
+            .then(r => r.json())
+            .then(data => {
+                overlay = L.imageOverlay(
+                    'leaflet_pngs/test_labeled.png',
+                    data.bounds,
+                    { opacity: 0.8 }
+                ).addTo(map);
+
+                console.log('Bounds:', data.bounds);
+                console.log('Instructions:', data.instructions);
+
+                document.getElementById('toggle').onclick = () => {
+                    if (map.hasLayer(overlay)) {
+                        map.removeLayer(overlay);
+                        document.getElementById('toggle').textContent = 'Show Overlay';
+                    } else {
+                        overlay.addTo(map);
+                        document.getElementById('toggle').textContent = 'Hide Overlay';
+                    }
+                };
+            });
+    </script>
+</body>
+</html>

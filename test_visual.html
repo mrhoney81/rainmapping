@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Visual Alignment Test</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        #map { height: 100vh; width: 100%; }
+        .info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        .toggle {
+            position: absolute;
+            top: 80px;
+            right: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        button {
+            margin: 5px 0;
+            padding: 8px;
+            width: 100%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <h3>Isle of Wight Test</h3>
+        <p><strong>Red Circle:</strong> PNG overlay<br>
+        <strong>Blue Marker:</strong> Leaflet marker<br>
+        <strong>Lat:</strong> 50.7632°N<br>
+        <strong>Lng:</strong> -1.2973°E</p>
+        <p id="status">Loading...</p>
+    </div>
+    <div class="toggle">
+        <button id="toggleOverlay">Hide Overlay</button>
+        <button id="toggleMarker">Hide Marker</button>
+        <button onclick="map.setView([50.7632, -1.2973], 10)">Zoom to IoW</button>
+    </div>
+    <div id="map"></div>
+
+    <script>
+        // Initialize map centered on Isle of Wight
+        const map = L.map('map', {
+            center: [50.7632, -1.2973],
+            zoom: 10
+        });
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Isle of Wight coordinates
+        const iowLat = 50.7632;
+        const iowLng = -1.2973;
+
+        // Add a blue marker at Isle of Wight
+        const marker = L.marker([iowLat, iowLng], {
+            title: 'Isle of Wight - TRUE LOCATION',
+        }).addTo(map);
+        marker.bindPopup('<b>Isle of Wight</b><br>True location<br>Lat: 50.7632°<br>Lng: -1.2973°');
+
+        // Load test image with red dot at Isle of Wight
+        let overlay;
+        fetch('leaflet_pngs/test_bounds.json')
+            .then(r => r.json())
+            .then(data => {
+                const bounds = data.bounds;
+                console.log('Image bounds:', bounds);
+
+                overlay = L.imageOverlay(
+                    'leaflet_pngs/test_landmarks.png',
+                    bounds,
+                    { opacity: 0.7 }
+                ).addTo(map);
+
+                document.getElementById('status').innerHTML =
+                    '<strong>Status:</strong> Loaded!<br>' +
+                    '<span style="color: green;">If aligned: Red circle and blue marker overlap</span><br>' +
+                    '<span style="color: red;">If misaligned: They appear in different places</span>';
+
+                // Toggle buttons
+                document.getElementById('toggleOverlay').onclick = () => {
+                    if (map.hasLayer(overlay)) {
+                        map.removeLayer(overlay);
+                        document.getElementById('toggleOverlay').textContent = 'Show Overlay';
+                    } else {
+                        overlay.addTo(map);
+                        document.getElementById('toggleOverlay').textContent = 'Hide Overlay';
+                    }
+                };
+
+                document.getElementById('toggleMarker').onclick = () => {
+                    if (map.hasLayer(marker)) {
+                        map.removeLayer(marker);
+                        document.getElementById('toggleMarker').textContent = 'Show Marker';
+                    } else {
+                        marker.addTo(map);
+                        document.getElementById('toggleMarker').textContent = 'Hide Marker';
+                    }
+                };
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                document.getElementById('status').innerHTML = '<strong style="color: red;">Error loading overlay!</strong>';
+            });
+    </script>
+</body>
+</html>
