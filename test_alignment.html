@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UK Landmark Alignment Test</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        #map { height: 100vh; width: 100%; }
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+            max-width: 300px;
+        }
+        h3 { margin-top: 0; }
+        .test-point { margin: 5px 0; padding: 5px; border-left: 4px solid; }
+        .test-point.red { border-color: rgb(255, 0, 0); }
+        .test-point.yellow { border-color: rgb(255, 255, 0); }
+        .test-point.green { border-color: rgb(0, 255, 0); }
+        .test-point.blue { border-color: rgb(0, 0, 255); }
+    </style>
+</head>
+<body>
+    <div class="info-panel">
+        <h3>Alignment Test</h3>
+        <p><strong>Test:</strong> Colored dots should align perfectly</p>
+        <div class="test-point red">🔴 Isle of Wight (Red)</div>
+        <div class="test-point yellow">🟡 London (Yellow)</div>
+        <div class="test-point green">🟢 Edinburgh (Green)</div>
+        <div class="test-point blue">🔵 Lizard Point (Blue)</div>
+        <p style="margin-top: 10px; font-size: 12px;">
+            <strong>PNG overlay</strong> has colored circles<br>
+            <strong>Leaflet markers</strong> at same coordinates<br>
+            If aligned correctly, colors should overlap!
+        </p>
+    </div>
+    <div id="map"></div>
+
+    <script>
+        // Initialize map
+        const map = L.map('map', {
+            center: [54.5, -3.0],
+            zoom: 6
+        });
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Load test data
+        fetch('leaflet_pngs/test_bounds.json')
+            .then(r => r.json())
+            .then(data => {
+                // Add PNG overlay
+                const imageBounds = data.bounds;
+                console.log('Image bounds:', imageBounds);
+
+                const imageOverlay = L.imageOverlay(
+                    'leaflet_pngs/test_landmarks.png',
+                    imageBounds,
+                    { opacity: 0.7 }
+                ).addTo(map);
+
+                // Add Leaflet markers at the same coordinates
+                data.test_points.forEach(point => {
+                    const colorMap = {
+                        'rgb(255, 0, 0)': '#ff0000',
+                        'rgb(255, 255, 0)': '#ffff00',
+                        'rgb(0, 255, 0)': '#00ff00',
+                        'rgb(0, 0, 255)': '#0000ff'
+                    };
+
+                    // Create a circle marker
+                    L.circleMarker([point.lat, point.lng], {
+                        radius: 50,
+                        fillColor: colorMap[point.color],
+                        color: colorMap[point.color],
+                        weight: 3,
+                        opacity: 0.8,
+                        fillOpacity: 0.3
+                    }).addTo(map).bindPopup(`<b>${point.name}</b><br>
+                        Lat: ${point.lat.toFixed(4)}<br>
+                        Lng: ${point.lng.toFixed(4)}<br>
+                        Color: ${point.color}`);
+
+                    console.log(`${point.name}: [${point.lat}, ${point.lng}] - ${point.color}`);
+                });
+
+                console.log('✓ Overlay and markers added');
+                console.log('If alignment is correct, colored circles should overlap!');
+            })
+            .catch(err => {
+                console.error('Error loading test data:', err);
+                alert('Error loading test data. Make sure test_bounds.json exists!');
+            });
+    </script>
+</body>
+</html>
